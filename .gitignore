@@ -1,5 +1,5 @@
 *.hi
 *.o
-
+Main
 standard.mk
 *~

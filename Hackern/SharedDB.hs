@@ -5,43 +5,55 @@ import Hypervisor.XenStore
 import Hypervisor.ErrorCodes
 import Control.Exception
 import System.FilePath (FilePath, (</>))
+import Prelude hiding (read)
 import Control.Applicative
 
 {-
   Use XenUtil to generate a playground first
 -}
 
-newTable :: Meta -> FilePath -> IO ()
-newTable meta@(Meta_ xs xc xd) path = do
+data Database = Database_ {
+    read   :: FilePath -> IO String,
+    update :: FilePath -> String -> IO (),
+    delete :: FilePath -> IO (),
+    withDB :: (XenStore -> FilePath -> IO ()) -> IO ()
+  }
+
+createDB :: Meta -> FilePath -> IO Database
+createDB meta@(Meta_ xs xc xd) path = do
   me <- xsGetDomId xs
-  removeTable meta path
+  removePath xs path
   xsMakeDirectory xs path
   xsSetPermissions xs path [ReadWritePerm me]
+  return Database_ {
+    read   = xsRead xs,
+    update = xsWrite xs,
+    delete = xsRemove xs,
+    withDB = \f -> f xs path
+  }
 
-removeEntry (Meta_ xs _ _) path = xsRemove xs path
-readEntry   (Meta_ xs _ _) path = xsRead xs path
-writeEntry  (Meta_ xs _ _) path value = xsWrite xs path value
+removeDB :: Database -> IO ()
+removeDB db = (withDB db) removePath
 
-waitForKey :: Meta -> String -> IO String
-waitForKey meta key = do
-  err <- catch (Right <$> readEntry meta key) leftError
+removePath :: XenStore -> String -> IO ()
+removePath xs str = do catch remSubItems onECContinue
+                       catch remItem     onECContinue
+  where
+    remSubItems = mapM_ (removePath xs) =<< xsDirectory xs str
+    remItem     = removePath xs str
+    onECContinue :: ErrorCode -> IO ()
+    onECContinue _ = return ()
+
+waitForKey :: Database -> String -> IO String
+waitForKey db key = do
+  err <- catch (Right <$> read db key) leftError
   case err of
-    Left _    -> threadDelay 100000 >> waitForKey meta key
+    Left _    -> threadDelay 100000 >> waitForKey db key
     Right res -> return res
  where
   leftError :: ErrorCode -> IO (Either ErrorCode String)
   leftError = return . Left
 
-listKeys :: XenStore -> FilePath -> IO [FilePath]
-listKeys xs here = filter (/= "") `fmap` xsDirectory xs here
+listKeys :: Meta -> FilePath -> IO [FilePath]
+listKeys (Meta_ xs _ _) here = filter (/= "") `fmap` xsDirectory xs here
 
-removeTable :: Meta -> String -> IO ()
-removeTable meta@(Meta_ xs _ _) str = do catch remSubItems onECContinue
-                                         catch remItem     onECContinue
-  where
-    remSubItems = mapM_ (removeTable meta) =<< xsDirectory xs str
-    remItem     = removeEntry meta str
-    onECContinue :: ErrorCode -> IO ()
-    onECContinue _ = return ()
-
-listValues meta here keys = mapM (readEntry meta) (map (here </>) keys)
