@@ -16,6 +16,6 @@ initMeta = do
   xs  <- initXenStore
   return Meta_ {
       _xStore   = xs,
-      _xConsole = writeConsole con,
-      _xDebug   = writeDebugConsole
+      _xConsole = \s -> writeConsole con $ "[CONSOLE]" ++ s ++ "\n",
+      _xDebug   = \s -> writeDebugConsole $ "[DEBUG]" ++ s ++ "\n"
     }
