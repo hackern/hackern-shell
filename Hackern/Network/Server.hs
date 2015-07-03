@@ -19,7 +19,7 @@ withServer xs _ f = do
     Left exp        -> print $ "can init server since: " ++ show exp
     Right transport -> f transport >> closeTransport transport
 
-serverDaemon (con, transport) = do
+serverDaemon con transport = do
 
   Right endpoint <- newEndPoint transport
 

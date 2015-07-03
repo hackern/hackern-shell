@@ -1,6 +1,6 @@
 module Hackern.Interactive.FSHandle where
 
-import Hackern.FS.Utils
+import Hackern.FS.API
 import Control.Monad
 import Hypervisor.Console
 import System.FilePath((</>), takeDirectory)

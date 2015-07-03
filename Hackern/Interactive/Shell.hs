@@ -12,7 +12,7 @@ import Hackern.Interactive.ShellState
 import Prelude hiding (getLine)
 
 -- The REPL shell loop
-runShell shellState fsState = do
+runShell shellState@(ShellState_ here xs con) fsState = do
   let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
   console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me ++ "\n"
@@ -24,7 +24,7 @@ loop shellState@(ShellState_ here xs con) = do
   lift $ writeConsole con (here ++ "> ")
   inquery <- lift $ getLine con
 
-  let dispatch f = loop (f shellState)
+  let dispatch f = f shellState >>= loop
 
   case words inquery of
     ("quit":_)      -> return ()
@@ -35,6 +35,7 @@ loop shellState@(ShellState_ here xs con) = do
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
       loop shellState
+
 
 getLine con = do
   nextC <- readConsole con 1

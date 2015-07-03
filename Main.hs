@@ -1,7 +1,11 @@
 import Hackern.SharedDB
-import Hackern.Interactive.Repl
+import Hackern.Interactive.Shell
 import Hackern.FS.API
 import Hackern.Network.Server
+import Hypervisor.XenStore
+import Hypervisor.Debug
+import Hypervisor.Console
+import Hackern.Interactive.ShellState
 import Hackern.Network.Send
 
 main :: IO ()
@@ -11,7 +15,7 @@ main = do
 
   withServer xs con $ \t -> do
     writeDebugConsole "Server Daemon Launching..."
-    serverDaemon con transport t
+    serverDaemon con t
     withFS xs con $ \rootDir fsState -> do
 
         let shellState = ShellState_ {
