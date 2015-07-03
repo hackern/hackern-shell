@@ -15,8 +15,8 @@ import Prelude hiding (getLine)
 runShell shellState@(ShellState_ here xs con) fsState = do
   let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
-  console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me ++ "\n"
-  console $ "Valid commands: quit, ls, cd, mkdir\n"
+  console $ "Welcome to Hackern system! I am " ++ show me ++ "\n"
+  console $ "Valid commands: quit, ls, cd, mkdir, discover\n"
   _ <- runHalfs fsState (loop shellState)
   return ()
 
@@ -27,11 +27,11 @@ loop shellState@(ShellState_ here xs con) = do
   let dispatch f = f shellState >>= loop
 
   case words inquery of
-    ("quit":_)      -> return ()
-    ("ls"  :_)      -> dispatch handleLs
-    ("cd"  :x:_)    -> dispatch $ handleCd x
-    ("mkdir":x:_)   -> dispatch $ handleMkdir x
-    ("disvcover":_) -> dispatch handleDiscover
+    ("quit":_)     -> return ()
+    ("ls"  :_)     -> dispatch handleLs
+    ("cd"  :x:_)   -> dispatch $ handleCd x
+    ("mkdir":x:_)  -> dispatch $ handleMkdir x
+    ("discover":_) -> dispatch handleDiscover
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
       loop shellState
