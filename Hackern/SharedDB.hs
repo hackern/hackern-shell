@@ -1,5 +1,5 @@
 module Hackern.SharedDB where
-import Hackern.System.Meta
+
 import Control.Concurrent
 import Hypervisor.XenStore
 import Hypervisor.ErrorCodes
@@ -19,8 +19,7 @@ data Database = Database_ {
     withDB :: (XenStore -> FilePath -> IO ()) -> IO ()
   }
 
-createDB :: Meta -> FilePath -> IO Database
-createDB meta@(Meta_ xs xc xd) path = do
+createDB xs path = do
   me <- xsGetDomId xs
   removePath xs path
   xsMakeDirectory xs path
@@ -54,6 +53,6 @@ waitForKey db key = do
   leftError :: ErrorCode -> IO (Either ErrorCode String)
   leftError = return . Left
 
-listKeys :: Meta -> FilePath -> IO [FilePath]
-listKeys (Meta_ xs _ _) here = filter (/= "") `fmap` xsDirectory xs here
+listKeys :: XenStore -> FilePath -> IO [FilePath]
+listKeys xs here = filter (/= "") `fmap` xsDirectory xs here
 

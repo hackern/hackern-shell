@@ -1,6 +1,5 @@
 module Hackern.Interactive.Repl where
 -- import Data.Word
-import Hackern.System.Meta
 import Hackern.Interactive.FSHandle
 import Hypervisor.XenStore
 import Control.Monad.Reader
@@ -15,15 +14,16 @@ import Hypervisor.Console
 import Prelude hiding (getLine)
 
 -- The REPL shell loop
-repl meta@(Meta_ xs console debug) con here fsState = do
+repl xs con debug here fsState = do
+  let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
-  console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me
+  console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me ++ "\n"
   console $ "Valid commands: quit, ls, cd, mkdir\n"
-  debug "Starting interaction loop!"
+  debug "Starting interaction loop!\n"
   info <- runHalfs fsState $ loop con here
   return ()
 
-loop con here = do
+loop con here  = do
   lift $ writeConsole con (here ++ "> ")
   inquery <- lift $ getLine con
   case words inquery of
@@ -35,7 +35,6 @@ loop con here = do
       lift $ writeConsole con "Unrecognized command\n"
       loop con here
 
-getLine :: Console -> IO String
 getLine con = do
   nextC <- readConsole con 1
   writeConsole con nextC

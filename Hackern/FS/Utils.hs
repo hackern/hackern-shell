@@ -1,4 +1,5 @@
 module Hackern.FS.Utils where
+import System.Device.Memory
 import Hypervisor.XenStore
 import Hypervisor.Console
 import XenDevice.Disk
@@ -16,14 +17,15 @@ rwx = [Read, Write, Execute]
 defaultPerm = FileMode rwx rwx rwx
 
 
-withFirstDisk xs con cb = do
+launchFS (xs, con, debug) cb = do
     diskNames <- listDisks xs
     threadDelay (1000000)
     debug $ "Disks Found: " ++ show diskNames
     case diskNames of
       (diskName:_) -> do -- Use the first available disk
         disk <- openDisk xs diskName
-        mdiskBD <- newDiskBlockDevice disk
+        -- mdiskBD <- newDiskBlockDevice disk
+        mdiskBD <- newMemoryBlockDevice 1024 512
         case mdiskBD of
           Just diskBD -> do            
             fsState <- mountFS diskBD
@@ -33,15 +35,15 @@ withFirstDisk xs con cb = do
             return ()
     
             case mrootDir of
-              Right rootDir -> cb xs con rootDir fsState
-              Left err -> writeDebugConsole $ "Fail: " ++ show err ++ "\n"
+              Right rootDir -> cb xs con debug rootDir fsState
+              Left err -> debug $ "Fail: " ++ show err ++ "\n"
 
             unmountInfo <- runHalfs fsState unmount
             case unmountInfo of
-              Left err -> writeDebugConsole $ "Error in unmounting: " ++ show err
+              Left err -> debug $ "Error in unmounting: " ++ show err
               Right () -> return ()
-          Nothing -> writeDebugConsole "Error in initializing disk block device!"
-      [] -> writeDebugConsole "No available disks!"
+          Nothing -> debug "Error in initializing disk block device!"
+      [] -> debug "No available disks!"
 
 
 mountFS diskBD = execNoEnv $ mount diskBD 0 0 defaultPerm

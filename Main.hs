@@ -1,8 +1,11 @@
 import Hackern.SharedDB
-import Hackern.System.Meta
 import Hackern.Interactive.Repl
+import Hackern.FS.Utils
+import Hackern.System.Config
 
 main :: IO ()
 main = do
-  meta <- initMeta
+  config <- initConfig
+  launchFS config repl
   return ()
+ 

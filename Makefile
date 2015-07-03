@@ -1,13 +1,13 @@
 BINARIES=Main
 include standard.mk
 
-run: Main
-	rm -f new.disk
+run:
 	dd if=/dev/zero of=new.disk bs=1M count=64
-	sudo xl create Hackern.config
+	sudo xl create Main.config
+	sleep 1
 	sudo xl dmesg -c
 
 clean::
 	find . -name "*.hi" -delete
 	find . -name "*.o" -delete
-	find . -name "*~" -delete
+	rm new.disk
