@@ -10,23 +10,23 @@ handleLs here con loop = do
   handle <- openDir here
   dirInfo <- readDir handle
   lift $ writeConsole con $ printDir dirInfo ++ "\n"
-  loop con here
+  loop
 
-handleCd here con x loop  = case x of
-  ".." -> loop con (takeDirectory here)
+handleCd here con x loop xs  = case x of
+  ".." -> loop xs con (takeDirectory here)
   d    -> do
     handle <- openDir here
     dirInfo <- readDir handle
     if (filter (== d) $ map fst dirInfo) /= [] then
-      loop con (here </> d)
+      loop xs con (here </> d)
       else do
         lift $ writeConsole con "No such directory\n"
-        loop con here
+        loop xs con here
 
 handleMkdir here x con loop = do
   if x /= ".." then mkdir (here </> x) defaultPerm
     else lift $ writeConsole con "Invalid directory name\n"
-  loop con here
+  loop
 
 printDir [] = ""
 printDir (x:[]) = fst x

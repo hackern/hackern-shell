@@ -17,7 +17,7 @@ repl xs con debug here fsState = do
   console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me ++ "\n"
   console $ "Valid commands: quit, ls, cd, mkdir\n"
   debug "Starting interaction loop!\n"
-  info <- runHalfs fsState _ -- (loop ) -- xs con here)
+  info <- runHalfs fsState (loop xs con here)
   return ()
 
 
