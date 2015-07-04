@@ -25,8 +25,8 @@ connectPeer xs dom = do
   let serverAddr = encodeEndPointAddress dom 0
 
   Right conn <- connect endpoint serverAddr ReliableOrdered defaultConnectHints
-
-  return (transport, send conn)
+  let sender = \s -> send conn [s]
+  return (transport, sender)
 
 --    send conn [BSC.pack (show (2*i)), BSC.pack (show (2*i + 1))]
 

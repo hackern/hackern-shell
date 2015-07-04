@@ -27,22 +27,12 @@ loop shellState@(ShellState_ here xs con) = do
   let dispatch f = f shellState >>= loop
 
   case words inquery of
-    ("quit":_)     -> return ()
-    ("ls"  :_)     -> dispatch handleLs
-    ("cd"  :x:_)   -> dispatch $ handleCd x
-    ("mkdir":x:_)  -> dispatch $ handleMkdir x
-    ("discover":_) -> dispatch handleDiscover
+    ("quit":_)       -> return ()
+    ("ls"  :_)       -> dispatch handleLs
+    ("cd"  :x:_)     -> dispatch $ handleCd x
+    ("mkdir":x:_)    -> dispatch $ handleMkdir x
+    ("connect":_)    -> appConnect shellState Nothing >> loop shellState
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
       loop shellState
-
-
-getLine con = do
-  nextC <- readConsole con 1
-  writeConsole con nextC
-  case nextC of
-    "\r" -> writeConsole con "\n" >> return ""
-    [x]  -> (x:) `fmap` getLine con
-    _    -> fail "More than one character back?"
-
 

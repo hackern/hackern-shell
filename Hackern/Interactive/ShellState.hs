@@ -8,4 +8,10 @@ data ShellState = ShellState_ {
   _con   :: Console
 }
 
-
+getLine con = do
+  nextC <- readConsole con 1
+  writeConsole con nextC
+  case nextC of
+    "\r" -> writeConsole con "\n" >> return ""
+    [x]  -> (x:) `fmap` getLine con
+    _    -> fail "More than one character back?"
