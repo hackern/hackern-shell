@@ -1,4 +1,4 @@
-module Hackern.FS.Utils where
+module Hackern.FS.API where
 import System.Device.Memory
 import Hypervisor.XenStore
 import Hypervisor.Console
@@ -17,7 +17,7 @@ rwx = [Read, Write, Execute]
 defaultPerm = FileMode rwx rwx rwx
 
 
-launchFS (xs, con, debug) cb = do
+withFS xs con f = do
     diskNames <- listDisks xs
     threadDelay (1000000)
     debug $ "Disks Found: " ++ show diskNames
@@ -35,12 +35,12 @@ launchFS (xs, con, debug) cb = do
             return ()
     
             case mrootDir of
-              Right rootDir -> cb xs con debug rootDir fsState
-              Left err -> debug $ "Fail: " ++ show err ++ "\n"
+              Right rootDir -> f rootDir fsState
+              Left err -> debug ("Fail: " ++ show err ++ "\n")
 
             unmountInfo <- runHalfs fsState unmount
             case unmountInfo of
-              Left err -> debug $ "Error in unmounting: " ++ show err
+              Left err -> debug ("Error in unmounting: " ++ show err)
               Right () -> return ()
           Nothing -> debug "Error in initializing disk block device!"
       [] -> debug "No available disks!"

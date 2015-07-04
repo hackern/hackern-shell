@@ -13,13 +13,13 @@ import Control.Monad
 import Control.Concurrent
 import Data.ByteString.Char8 as BSC
 
-withServer (xs, _, _) f = do
+withServer xs _ f = do
   t <- createTransport xs
   case t of
     Left exp        -> print $ "can init server since: " ++ show exp
     Right transport -> f transport >> closeTransport transport
 
-serverDaemon (xs, con, debug) transport = do
+serverDaemon (con, transport) = do
 
   Right endpoint <- newEndPoint transport
 

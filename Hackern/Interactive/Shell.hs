@@ -1,4 +1,4 @@
-module Hackern.Interactive.Repl where
+module Hackern.Interactive.Shell where
 
 import Hackern.Interactive.SendHandle
 import Hackern.Interactive.FSHandle
@@ -8,32 +8,33 @@ import Hypervisor.Debug
 import Control.Concurrent
 import Halfs.Monad
 import Hypervisor.Console
+import Hackern.Interactive.ShellState
 import Prelude hiding (getLine)
 
 -- The REPL shell loop
-repl xs con debug here fsState = do
+runShell shellState fsState = do
   let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
   console $ "Hello! This is an interactive Unix-like file-system shell for " ++ show me ++ "\n"
   console $ "Valid commands: quit, ls, cd, mkdir\n"
-  debug "Starting interaction loop!\n"
-  info <- runHalfs fsState _ -- (loop ) -- xs con here)
+  _ <- runHalfs fsState (loop shellState)
   return ()
 
-
-loop xs con here = do
-  let loop' = loop xs con here
+loop shellState@(ShellState_ here xs con) = do
   lift $ writeConsole con (here ++ "> ")
   inquery <- lift $ getLine con
+
+  let dispatch f = loop (f shellState)
+
   case words inquery of
-    ("quit":_)    -> return ()
-    ("ls"  :_)    -> handleLs here con loop'
-    ("cd"  :x:_)  -> handleCd here con x xs loop
-    ("mkdir":x:_) -> handleMkdir here x con loop'
-    ("disvcover":_) -> handleDiscover xs con loop'
+    ("quit":_)      -> return ()
+    ("ls"  :_)      -> dispatch handleLs
+    ("cd"  :x:_)    -> dispatch $ handleCd x
+    ("mkdir":x:_)   -> dispatch $ handleMkdir x
+    ("disvcover":_) -> dispatch handleDiscover
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
-      loop'
+      loop shellState
 
 getLine con = do
   nextC <- readConsole con 1
