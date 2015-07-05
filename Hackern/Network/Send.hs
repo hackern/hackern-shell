@@ -9,27 +9,22 @@ import Network.Transport.IVC
 
 import Hypervisor.DomainInfo (DomId(..))
 import Hypervisor.XenStore
-import Hypervisor.Debug
 
 import Control.Monad
 import Control.Concurrent
 import qualified Data.ByteString.Char8 as BSC
 
-data ConnectionState = ConnectionState_ {
-    otherId     :: Maybe DomId,
-    sendHandler :: Maybe (String -> IO ()),
-    peers       :: Maybe [DomId]
-}
 
-initConnState = ConnectionState_ Nothing Nothing Nothing
+type Sender = String -> IO (Either (TransportError SendErrorCode) ())
 
 discoverPeers :: XenStore -> IO [DomId]
 discoverPeers xs = waitForDoms xs 1
 
-connectPeer :: Transport -> XenStore -> DomId -> IO (String -> IO (Either (TransportError SendErrorCode) ()))
-connectPeer transport xs dom = do
+connectPeer :: XenStore -> DomId -> IO Sender
+connectPeer xs dom = do
   xs <- initXenStore
 
+  Right transport <- createTransport xs
   Right endpoint <- newEndPoint transport
 
   let serverAddr = encodeEndPointAddress dom 0
@@ -38,5 +33,5 @@ connectPeer transport xs dom = do
   let sendHandler = \s -> send conn [BSC.pack s]
   return sendHandler
 
-closePeer :: Console -> IO ()
+closePeer :: (String -> IO ()) -> IO ()
 closePeer console = console "closing...\n"

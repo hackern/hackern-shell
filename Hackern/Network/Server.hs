@@ -17,7 +17,7 @@ withServer xs _ f = do
   t <- createTransport xs
   case t of
     Left exp        -> print $ "can init server since: " ++ show exp
-    Right transport -> f transport >> closeTransport transport
+    Right transport -> f transport -- >> closeTransport transport
 
 serverDaemon con transport = do
 

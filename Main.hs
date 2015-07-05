@@ -1,12 +1,15 @@
 import Hackern.SharedDB
 import Hackern.Interactive.Shell
 import Hackern.FS.API
+import Hackern.Storage.API
 import Hackern.Network.Server
+import Hackern.Interactive.ShellState
+import Hackern.Network.Send
+
 import Hypervisor.XenStore
 import Hypervisor.Debug
 import Hypervisor.Console
-import Hackern.Interactive.ShellState
-import Hackern.Network.Send
+
 
 main :: IO ()
 main = do
@@ -16,13 +19,13 @@ main = do
   withServer xs con $ \t -> do
     writeDebugConsole "Server Daemon Launching..."
     serverDaemon con t
-    withFS xs con $ \rootDir fsState -> do
-
-        let shellState = ShellState_ {
+    withFS xs con $ \rootDir fsState ->
+        withStorage $ \dev -> do
+          let shellState = ShellState_ {
             _here = rootDir,
             _xs   = xs,
             _con  = con,
-            _tran = t
-        }
+            _dev  = dev
+          }
 
-        runShell shellState fsState
+          runShell shellState fsState

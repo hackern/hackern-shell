@@ -2,17 +2,21 @@ module Hackern.Interactive.Shell where
 
 import Hackern.Interactive.SendHandle
 import Hackern.Interactive.FSHandle
-import Hypervisor.XenStore
-import Control.Monad.Reader
-import Hypervisor.Debug
-import Control.Concurrent
-import Halfs.Monad
-import Hypervisor.Console
 import Hackern.Interactive.ShellState
+import Hackern.Storage.KV
+
+import Hypervisor.Console
+import Hypervisor.XenStore
+import Hypervisor.Debug
+
+import Control.Monad.Reader
+import Control.Concurrent
+
+import Halfs.Monad
 import Prelude hiding (getLine)
 
 -- The REPL shell loop
-runShell shellState@(ShellState_ here xs con _) fsState = do
+runShell shellState@(ShellState_ here xs con dev) fsState = do
   let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
   console $ "Welcome to Hackern system! I am " ++ show me ++ "\n"
@@ -20,7 +24,7 @@ runShell shellState@(ShellState_ here xs con _) fsState = do
   _ <- runHalfs fsState (loop shellState)
   return ()
 
-loop shellState@(ShellState_ here xs con _) = do
+loop shellState@(ShellState_ here xs con dev) = do
   lift $ writeConsole con (here ++ "> ")
   inquery <- lift $ getLine con
 
@@ -31,7 +35,14 @@ loop shellState@(ShellState_ here xs con _) = do
     ("ls"  :_)       -> dispatch handleLs
     ("cd"  :x:_)     -> dispatch $ handleCd x
     ("mkdir":x:_)    -> dispatch $ handleMkdir x
-    ("talk":_)       -> appConnect shellState initConnState >> loop shellState
+    ("talk":_)       -> appConnect shellState Nothing >> loop shellState
+    ("read":x:_)     -> do
+       maybeV <- lift $ load dev x
+       case maybeV of
+         Just v  -> lift $ writeConsole con $ "Value: " ++ v ++ "\n"
+         Nothing -> lift $ writeConsole con $ "Invalid Key\n"
+       loop shellState
+    ("write":k:v:_)  -> lift (store dev k v) >> loop shellState
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
       loop shellState
