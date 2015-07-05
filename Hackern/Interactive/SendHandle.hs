@@ -2,52 +2,45 @@ module Hackern.Interactive.SendHandle where
 
 import Hackern.Interactive.ShellState
 import Hackern.Network.Send
+import Hypervisor.DomainInfo (DomId(..))
 import Control.Monad
 import Hypervisor.Console
 import Control.Monad.Reader
-
+import Prelude hiding (getLine)
 
 appConnect shellState@(ShellState_ here xs con) maybeConn = do
-  let console = lift . writeConsole con str
-
-  console (here ++ "Connect Application: exit, connect\n")
+  let console = lift . writeConsole con
+  console "Valid commands: exit, connect, send\n"
   case maybeConn of
-    Nothing          -> console "currently not connected\n"
-    Just (id, _, _)  -> console "currently connected with " ++ id ++ "\n"
+    Nothing       -> do peers <- lift $ discoverPeers xs
+                        console $ "Available Peers: " ++ show peers ++ "\n"
 
-  peers <- lift $ discoverPeers xs
-  console $ "Available Peers: " ++ show peers ++ "\n"
+    Just (id, _)  -> console $ "\tStatus: Connected with " ++ id ++ "\n"
 
+
+  console $ "> "
   inquery <- lift $ getLine con
 
   case words inquery of
 
     ("exit":_)       -> return ()
 
-    ("connect":x:_)  -> if x `elem` peers then do
-        (t, sender) <- connectPeer xs x
-        writeConsole con $ "Connecting to " ++ x ++ "...\n"
-        appConnect shellState $ Just (x, t, sender)
-      else do
-        writeConsole con $ "Failed: " ++ x ++ " doesn't exist!\n"
-        appConnect shellState Nothing
+    ("connect":x:_)  -> do -- if (read x :: DomId) `elem` peers then do
+        sender <- lift $ connectPeer xs (read x :: DomId)
+        console $ "Connecting to " ++ x ++ "...\n"
+        appConnect shellState $ Just (x, sender)
+{-      else do
+        console $ "Failed: " ++ x ++ " doesn't exist!\n"
+        appConnect shellState Nothing -}
 
     ("send":msg:_)   -> case maybeConn of
       Nothing -> do
-        writeConsole con $ "Not connected!\n"
+        console $ "Not connected!\n"
         appConnect shellState Nothing
-      Just (_, _, sender) -> do
-        sender msg
+      Just (_, sender) -> do
+        lift $ sender msg
         appConnect shellState maybeConn
-
-    ("close":_)     -> case maybeConn of
-      Nothing -> do
-        writeConsole con $ "Not connected!\n"
-        appConnect shellState Nothing
-      Just (_, t, _) -> do
-        closePeer t
-        appConnect shellState Nothing
 
     _ -> do
       console "Unrecognized command\n"
-      loop shellState
+      appConnect shellState maybeConn

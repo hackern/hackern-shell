@@ -16,7 +16,7 @@ runShell shellState@(ShellState_ here xs con) fsState = do
   let console str = writeConsole con $ str ++ "\n"
   me <- xsGetDomId xs
   console $ "Welcome to Hackern system! I am " ++ show me ++ "\n"
-  console $ "Valid commands: quit, ls, cd, mkdir, discover\n"
+  console $ "Valid commands: quit, ls, cd, mkdir, talk\n"
   _ <- runHalfs fsState (loop shellState)
   return ()
 
@@ -31,7 +31,7 @@ loop shellState@(ShellState_ here xs con) = do
     ("ls"  :_)       -> dispatch handleLs
     ("cd"  :x:_)     -> dispatch $ handleCd x
     ("mkdir":x:_)    -> dispatch $ handleMkdir x
-    ("connect":_)    -> appConnect shellState Nothing >> loop shellState
+    ("talk":_)    -> appConnect shellState Nothing >> loop shellState
     _ -> do
       lift $ writeConsole con "Unrecognized command\n"
       loop shellState

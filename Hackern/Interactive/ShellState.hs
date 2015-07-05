@@ -1,6 +1,7 @@
 module Hackern.Interactive.ShellState where
 import Hypervisor.XenStore
 import Hypervisor.Console
+import Prelude hiding (getLine)
 
 data ShellState = ShellState_ {
   _here  :: FilePath,

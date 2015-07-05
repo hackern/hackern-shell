@@ -7,15 +7,17 @@ module Hackern.Network.Send (
 import Network.Transport
 import Network.Transport.IVC
 
+import Hypervisor.DomainInfo (DomId(..))
 import Hypervisor.XenStore
 import Hypervisor.Debug
 
 import Control.Monad
 import Control.Concurrent
-import Data.ByteString.Char8 as BSC
+import qualified Data.ByteString.Char8 as BSC
 
 discoverPeers xs = waitForDoms xs 1
 
+connectPeer :: XenStore -> DomId -> IO (String -> IO (Either (TransportError SendErrorCode) ()))
 connectPeer xs dom = do
   xs <- initXenStore
 
@@ -25,9 +27,7 @@ connectPeer xs dom = do
   let serverAddr = encodeEndPointAddress dom 0
 
   Right conn <- connect endpoint serverAddr ReliableOrdered defaultConnectHints
-  let sender = \s -> send conn [s]
-  return (transport, sender)
+  let sender = \s -> send conn [BSC.pack s]
+  return sender
 
---    send conn [BSC.pack (show (2*i)), BSC.pack (show (2*i + 1))]
-
-closePeer transport = closeTransport transport
+closePeer console = console "closing...\n"
