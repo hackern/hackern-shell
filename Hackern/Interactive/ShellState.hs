@@ -1,12 +1,14 @@
 module Hackern.Interactive.ShellState where
 import Hypervisor.XenStore
 import Hypervisor.Console
+import Network.Transport.IVC(Transport(..))
 import Prelude hiding (getLine)
 
 data ShellState = ShellState_ {
   _here  :: FilePath,
   _xs    :: XenStore,
-  _con   :: Console
+  _con   :: Console,
+  _tran  :: Transport
 }
 
 getLine con = do

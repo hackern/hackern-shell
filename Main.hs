@@ -21,7 +21,8 @@ main = do
         let shellState = ShellState_ {
             _here = rootDir,
             _xs   = xs,
-            _con  = con
+            _con  = con,
+            _tran = t
         }
 
         runShell shellState fsState
